@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>식단 기록 및 혈당 예측 - GlucoCare AI</title>
+    <!-- 깔끔한 한글 웹폰트 (Pretendard) 적용 -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <style>
+        :root {
+            --primary-color: #059669; /* 에메랄드 그린 포인트 */
+            --primary-hover: #047857;
+            --bg-color: #f4f7fb;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+        }
+
+        /* 상단 네비게이션 바 */
+        header {
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a.active, .nav-links a:hover {
+            color: var(--primary-color);
+        }
+
+        /* 메인 컨테이너 */
+        .container {
+            max-width: 1000px;
+            margin: 2.5rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .page-title-box {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-title-box h1 {
+            color: var(--primary-color);
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .page-title-box p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* 2분할 레이아웃 */
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        }
+
+        .card h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 1.2rem;
+            color: var(--text-main);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 1rem;
+            background-color: #fff;
+            color: var(--text-main);
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+        }
+
+        .submit-btn {
+            width: 100%;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            box-shadow: 0 4px 6px rgba(5, 150, 105, 0.2);
+        }
+
+        .submit-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        /* 결과 출력 상자 */
+        .result-box {
+            background-color: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1.25rem;
+            min-height: 280px;
+            font-size: 0.95rem;
+            white-space: pre-line;
+            color: var(--text-main);
+            line-height: 1.7;
+        }
+
+        .placeholder-text {
+            color: var(--text-muted);
+            text-align: center;
+            padding-top: 4rem;
+        }
+
+        /* 푸터 */
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border-color);
+            margin-top: 3rem;
+            background-color: var(--card-bg);
+        }
+
+        footer a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .grid-layout {
+                grid-template-columns: 1fr;
+            }
+            header {
+                flex-direction: column;
+                gap: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 상단 헤더 (1페이지와 통일) -->
+    <header>
+        <a href="index.html" class="logo">
+            <span>🩸</span> GlucoCare AI
+        </a>
+        <nav class="nav-links">
+            <a href="index.html">홈 / 대시보드</a>
+            <a href="predict.html" class="active">식단 기록 및 혈당 예측</a>
+            <a href="#chatbot">AI 당뇨 관리 챗봇</a>
+            <a href="#report">상세 리포트</a>
+        </nav>
+    </header>
+
+    <!-- 메인 컨텐츠 -->
+    <main class="container">
+        
+        <div class="page-title-box">
+            <h1>혈당 및 음식 예측 비서</h1>
+            <p>식전 혈당과 섭취할 음식을 선택하면 식후 혈당 변화와 건강 위험도를 바로 예측해 드립니다[cite: 1].</p>
+        </div>
+
+        <div class="grid-layout">
+            <!-- 왼쪽: 정보 입력 폼 -->
+            <div class="card">
+                <h3>📥 정보 입력</h3>
+                <div class="form-group">
+                    <label for="pre_sugar">1. 식전 혈당 수치 (mg/dL)</label>
+                    <input type="number" id="pre_sugar" class="form-control" placeholder="예: 95">
+                </div>
+
+                <div class="form-group">
+                    <label for="food_select">2. 먹을 음식 선택</label>
+                    <select id="food_select" class="form-control">
+                        <!-- 노트북 FOOD_DB 기반 목록 -->
+                        <option value="" disabled selected>음식을 선택하세요</option>
+                        <option value="고기능성 샐러드">고기능성 샐러드</option>
+                        <option value="계란프라이">계란프라이 (120 kcal / +1 mg/dL)</option>
+                        <option value="곤약밥">곤약밥 (120 kcal / +8 mg/dL)</option>
+                        <option value="고등어구이">고등어구이 (280 kcal / +3 mg/dL)</option>
+                        <option value="고구마">고구마 (240 kcal / +22 mg/dL)</option>
+                        <option value="감자튀김">감자튀김 (320 kcal / +38 mg/dL)</option>
+                        <option value="김밥">김밥 (480 kcal / +42 mg/dL)</option>
+                        <option value="닭가슴살">닭가슴살 (150 kcal / +2 mg/dL)</option>
+                        <option value="라면">라면 (500 kcal / +50 mg/dL)</option>
+                        <option value="떡볶이">떡볶이 (400 kcal / +55 mg/dL)</option>
+                        <option value="바나나">바나나 (100 kcal / +18 mg/dL)</option>
+                        <option value="밥">밥 (300 kcal / +35 mg/dL)</option>
+                        <option value="볶음밥">볶음밥 (650 kcal / +48 mg/dL)</option>
+                        <option value="사과">사과 (120 kcal / +10 mg/dL)</option>
+                        <option value="삼겹살">삼겹살 (600 kcal / +8 mg/dL)</option>
+                        <option value="샌드위치">샌드위치 (350 kcal / +28 mg/dL)</option>
+                        <option value="소고기 등심">소고기 등심 (350 kcal / +5 mg/dL)</option>
+                        <option value="아메리카노">아메리카노 (10 kcal / +1 mg/dL)</option>
+                        <option value="오렌지주스">오렌지주스 (120 kcal / +35 mg/dL)</option>
+                        <option value="우유">우유 (130 kcal / +8 mg/dL)</option>
+                        <option value="잔치국수">잔치국수 (420 kcal / +38 mg/dL)</option>
+                        <option value="제로콜라">제로콜라 (0 kcal / +0 mg/dL)</option>
+                        <option value="짜장면">짜장면 (800 kcal / +60 mg/dL)</option>
+                        <option value="짬뽕">짬뽕 (750 kcal / +52 mg/dL)</option>
+                        <option value="치킨">치킨 (700 kcal / +25 mg/dL)</option>
+                        <option value="치즈케이크">치즈케이크 (350 kcal / +48 mg/dL)</option>
+                        <option value="초콜릿">초콜릿 (250 kcal / +45 mg/dL)</option>
+                        <option value="파스타">파스타 (550 kcal / +30 mg/dL)</option>
+                        <option value="피자">피자 (600 kcal / +45 mg/dL)</option>
+                        <option value="현미밥">현미밥 (290 kcal / +20 mg/dL)</option>
+                        <option value="햄버거">햄버거 (550 kcal / +40 mg/dL)</option>
+                    </select>
+                </div>
+
+                <button class="submit-btn" onclick="calculateBloodSugar()">⚡ 실시간 분석하기</button>
+            </div>
+
+            <!-- 오른쪽: 예측 결과 출력 영역 -->
+            <div class="card">
+                <h3>📋 예측 결과</h3>
+                <div id="resultBox" class="result-box">
+                    <div class="placeholder-text">
+                        왼쪽 폼을 작성하신 뒤 '실시간 분석하기' 버튼을 누르면<br>여기에 분석 리포트가 나타납니다.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 푸터 -->
+    <footer>
+        <p>© 2026 GlucoCare AI - 개인 맞춤형 혈당 예측 및 식단 관리 서비스</p>
+    </footer>
+
+    <!-- 챗봇 Notebook 로직을 구현한 자바스크립트 -->
+    <script>
+        // 노트북 내 정의된 FOOD_DB 데이터 연동
+        const FOOD_DB = {
+            "밥": [300, 35], "현미밥": [290, 20], "곤약밥": [120, 8], "김밥": [480, 42], "볶음밥": [650, 48],
+            "라면": [500, 50], "떡볶이": [400, 55], "잔치국수": [420, 38], "짜장면": [800, 60], "파스타": [550, 30],
+            "삼겹살": [600, 8], "닭가슴살": [150, 2], "소고기 등심": [350, 5], "고등어구이": [280, 3], "계란프라이": [120, 1],
+            "피자": [600, 45], "치킨": [700, 25], "햄버거": [550, 40], "샌드위치": [350, 28],
+            "사과": [120, 10], "바나나": [100, 18], "고구마": [240, 22], "감자튀김": [320, 38], "초콜릿": [250, 45], "치즈케이크": [350, 48],
+            "콜라": [110, 40], "제로콜라": [0, 0], "아메리카노": [10, 1], "우유": [130, 8], "오렌지주스": [120, 35],
+            "고기능성 샐러드": [150, 5], "짬뽕": [750, 52]
+        };
+
+        function calculateBloodSugar() {
+            const preSugarInput = document.getElementById('pre_sugar').value;
+            const foodSelect = document.getElementById('food_select').value;
+            const resultBox = document.getElementById('resultBox');
+
+            // 유효성 검사 (노트북 소스 코드 로직 반영)[cite: 1]
+            if (!preSugarInput || isNaN(preSugarInput)) {
+                resultBox.innerHTML = "⚠️ 식전 혈당 수치에 올바른 숫자를 입력해주세요.";
+                return;
+            }
+
+            if (!foodSelect) {
+                resultBox.innerHTML = "⚠️ 음식을 선택해주세요.";
+                return;
+            }
+
+            const preSugar = parseFloat(preSugarInput);
+            const foodData = FOOD_DB[foodSelect];
+
+            if (!foodData) {
+                resultBox.innerHTML = `❌ '${foodSelect}'은(는) 등록되지 않은 음식입니다.`;
+                return;
+            }
+
+            const calories = foodData[0];
+            const spike = foodData[1];
+            const postSugar = preSugar + spike;
+
+            // 위험도 판정 기준 (노트북 코드와 동일)[cite: 1]
+            let statusIcon = "";
+            let riskLevel = "";
+
+            if (postSugar < 140) {
+                statusIcon = "🟢";
+                riskLevel = "안전 (식후 혈당 조절이 원활히 관리되는 상태입니다)";
+            } else if (postSugar < 180) {
+                statusIcon = "🟡";
+                riskLevel = "보통 (식후 정상 범위를 다소 초과했으나 가벼운 산책으로 조절 가능한 수준입니다)";
+            } else if (postSugar < 240) {
+                statusIcon = "🟠";
+                riskLevel = "위험 (식후 고혈당 경고! 탄수화물 및 당 가공식품 섭취에 주의가 필요합니다)";
+            } else {
+                statusIcon = "🔴";
+                riskLevel = "매우위험 (심각한 고혈당 수치입니다. 지속될 경우 전문의와 상담하십시오)";
+            }
+
+            // 결과 텍스트 포맷팅[cite: 1]
+            const resultText = `📝 [분석 리포트]
+• 입력하신 식전 혈당 : ${preSugar.toFixed(1)} mg/dL
+• 선택하신 먹을 음식 : ${foodSelect}
+
+📊 [예측 수치]
+• 음식 칼로리 : ${calories} kcal
+• 예상 혈당 상승 : +${spike} mg/dL
+• 예상 식후 혈당 : ${postSugar.toFixed(1)} mg/dL
+
+⚠️ [위험도 판정]
+${statusIcon} ${riskLevel}`;
+
+            resultBox.innerHTML = resultText;
+        }
+    </script>
+</body>
+</html>
